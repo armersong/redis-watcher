@@ -1,6 +1,9 @@
 package org.casbin.watcher;
 
+import com.alibaba.fastjson.JSONObject;
 import org.casbin.jcasbin.persist.Watcher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -9,11 +12,13 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 public class RedisWatcher implements Watcher {
-    private Runnable updateCallback;
-    private final JedisPool jedisPool;
-    private final String localId;
-    private final String redisChannelName;
-    private SubThread subThread;
+    private static final Logger logger = LoggerFactory.getLogger(RedisWatcher.class);
+
+    protected Runnable updateCallback;
+    protected final JedisPool jedisPool;
+    protected final String localId;
+    protected final String redisChannelName;
+    protected SubThread subThread;
 
     public RedisWatcher(String redisIp, int redisPort, String redisChannelName, int timeout, String password) {
         this.jedisPool = new JedisPool(new JedisPoolConfig(), redisIp, redisPort, timeout, password);
@@ -56,5 +61,15 @@ public class RedisWatcher implements Watcher {
     private void startSub(){
         subThread = new SubThread(jedisPool,redisChannelName,updateCallback);
         subThread.start();
+    }
+
+
+    protected void notify(SyncMessage message) {
+        String content = JSONObject.toJSONString(message);
+        try (Jedis jedis = jedisPool.getResource()) {
+            jedis.publish(redisChannelName, content);
+        } catch (Exception e) {
+            logger.error(String.format("notify %s failed:%s", message, e.getMessage()), e);
+        }
     }
 }

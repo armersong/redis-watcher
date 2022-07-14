@@ -1,7 +1,6 @@
 package org.casbin.watcher;
 
 import redis.clients.jedis.JedisPubSub;
-
 import java.util.function.Consumer;
 
 public class Subscriber extends JedisPubSub {
@@ -22,7 +21,8 @@ public class Subscriber extends JedisPubSub {
 
     public void onMessage(String channel, String message) {
         runnable.run();
-        if (consumer != null)
-            consumer.accept("Channel: " + channel + " Message: " + message);
+        if (consumer != null) {
+            consumer.accept(message);
+        }
     }
 }
