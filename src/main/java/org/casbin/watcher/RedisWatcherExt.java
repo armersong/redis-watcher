@@ -12,30 +12,14 @@ import java.util.function.Consumer;
 
 public class RedisWatcherExt extends RedisWatcher implements WatcherEx {
     private static final Logger logger = LoggerFactory.getLogger(RedisWatcherExt.class);
-    private SyncListener listener;
+    private SyncCoordinator coordinator;
 
     public RedisWatcherExt(String redisIp, int redisPort, String redisChannelName, int timeout, String password) {
         super(redisIp, redisPort, redisChannelName, timeout, password);
     }
 
-    public void SetSyncListener(SyncListener listener) {
-        this.listener = listener;
-    }
-
-    @Override
-    public void setUpdateCallback(Runnable runnable) {
-        this.updateCallback=runnable;
-        subThread.setUpdateCallback(new Runnable() {
-            @Override
-            public void run() {
-                logger.info("update callback");
-                runnable.run();
-            }
-        });
-    }
-
-    @Override
-    public void setUpdateCallback(Consumer<String> consumer) {
+    public void SetSyncCoordinator(SyncCoordinator coordinator) {
+        this.coordinator = coordinator;
         super.setUpdateCallback(new Consumer<String>(){
             @Override
             public void accept(String s) {
@@ -44,15 +28,50 @@ public class RedisWatcherExt extends RedisWatcher implements WatcherEx {
         });
     }
 
+    @Override
+    public void setUpdateCallback(Runnable runnable) {
+        logger.warn("setUpdateCallback is deprecated");
+    }
+
+    @Override
+    public void setUpdateCallback(Consumer<String> consumer) {
+        super.setUpdateCallback(consumer);
+    }
+
     protected void handleMessage(String s) {
         try {
-            SyncMessage message = JSONObject.parseObject(s, SyncMessage.class);
-            if(message.getInstanceId().equals(this.localId)) {
-                logger.debug("ignore self message: %s", s);
+            logger.debug("got sync message: {}",s);
+            SyncMessage msg = JSONObject.parseObject(s, SyncMessage.class);
+            if(msg.getInstanceId().equals(this.localId)) {
+                logger.debug("ignore self message: {}", s);
                 return;
             }
-            if(listener != null) {
-                listener.handleMessage(message);
+            if(coordinator != null) {
+                Model m = coordinator.getModel(msg.getModelId());
+                if(m == null) {
+                    logger.warn("model {} not exist or reloaded", msg.getModelId());
+                    return;
+                }
+                switch(msg.getOp()) {
+                    case SyncMessage.OP_ADD_POLICY: {
+                        logger.info("model {} add: {}", msg.getModelId(), msg);
+                        m.addPolicy(msg.getSection(), msg.getPtype(), msg.getContents());
+                        break;
+                    }
+                    case SyncMessage.OP_REMOVE_POLICY: {
+                        logger.info("model {} remove: {}", msg.getModelId(), msg);
+                        m.removePolicy(msg.getSection(), msg.getPtype(), msg.getContents());
+                        break;
+                    }
+                    case SyncMessage.OP_ADD_FILTERED_POLICY:
+                    case SyncMessage.OP_SAVE_POLICY: {
+                        logger.error("@TODO op: {}: {}", msg.getOp(), msg);
+                        break;
+                    }
+                    default: {
+                        logger.error("unknown op: {}: {}", msg.getOp(), msg);
+                    }
+                }
             }
         } catch(Exception e) {
             logger.error(String.format("invalid message:%s", s), e);

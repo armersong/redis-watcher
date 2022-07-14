@@ -65,11 +65,13 @@ public class RedisWatcher implements Watcher {
 
 
     protected void notify(SyncMessage message) {
-        String content = JSONObject.toJSONString(message);
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.publish(redisChannelName, content);
-        } catch (Exception e) {
-            logger.error(String.format("notify %s failed:%s", message, e.getMessage()), e);
+        synchronized (this) {
+            String content = JSONObject.toJSONString(message);
+            try (Jedis jedis = jedisPool.getResource()) {
+                jedis.publish(redisChannelName, content);
+            } catch (Exception e) {
+                logger.error(String.format("notify %s failed:%s", message, e.getMessage()), e);
+            }
         }
     }
 }

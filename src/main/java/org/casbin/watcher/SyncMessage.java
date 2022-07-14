@@ -24,6 +24,8 @@ public class SyncMessage {
         this.instanceId = instanceId;
         this.modelId = modelId;
         this.op = op;
+        this.section = section;
+        this.ptype = ptype;
         this.contents = s;
     }
 
@@ -49,15 +51,6 @@ public class SyncMessage {
 
     public void setContents(List<String> contents) {
         this.contents = contents;
-    }
-
-    @Override
-    public String toString() {
-        return "SyncMessage{" +
-                "instanceId='" + instanceId + '\'' +
-                ", op='" + op + '\'' +
-                ", contents=" + contents +
-                '}';
     }
 
     public Integer getFilterIndex() {
@@ -90,5 +83,18 @@ public class SyncMessage {
 
     public void setPtype(String ptype) {
         this.ptype = ptype;
+    }
+
+    @Override
+    public String toString() {
+        return "SyncMessage{" +
+                "instanceId='" + instanceId + '\'' +
+                ", op='" + op + '\'' +
+                ", contents=" + contents +
+                ", filterIndex=" + filterIndex +
+                ", modelId='" + modelId + '\'' +
+                ", section='" + section + '\'' +
+                ", ptype='" + ptype + '\'' +
+                '}';
     }
 }
