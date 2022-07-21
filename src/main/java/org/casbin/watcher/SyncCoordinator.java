@@ -1,7 +1,7 @@
 package org.casbin.watcher;
 
-import org.casbin.jcasbin.model.Model;
+import org.casbin.jcasbin.main.Enforcer;
 
 public interface SyncCoordinator {
-    Model getModel(String modelId);
+    Enforcer getEnforcer(String modelId);
 }

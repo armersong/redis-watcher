@@ -6,7 +6,7 @@
 
     <groupId>org.casbin</groupId>
     <artifactId>jcasbin-redis-watcher</artifactId>
-    <version>1.5.0</version>
+    <version>1.5.1</version>
 
     <issueManagement>
         <system>Github</system>
@@ -87,6 +87,11 @@
             <artifactId>junit</artifactId>
             <version>4.13.1</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>1.15</version>
         </dependency>
     </dependencies>
 
